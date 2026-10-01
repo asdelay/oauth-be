@@ -18,8 +18,8 @@ def get_google_oauth_redirect_uri():
 
 @router.post("/google/callback")
 async def handle_code(code: Annotated[str, Body(embed=True)]):
-    print("hello from post")
     google_token_url = "https://oauth2.googleapis.com/token"
+    list_url = "https://www.googleapis.com/drive/v3/files"
     async with aiohttp.ClientSession() as session:
         async with session.post(
             url=google_token_url,
@@ -33,11 +33,23 @@ async def handle_code(code: Annotated[str, Body(embed=True)]):
         ) as response:
             res = await response.json()
             print(res)
+            access_token=res["access_token"]
             user_data = jwt.decode(
                 jwt=res["id_token"],
                 algorithms=["RS256"],
                 options={"verify_signature": False}
             )
+        print(access_token)
+        async with session.get(
+            url=list_url,
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            }
+        ) as response:
+            res = await response.json()
+            print(res)
+            files = [file["name"] for file in res["files"]]
     return {
-        "user": user_data
+        "user": user_data,
+        "files": files
     }
