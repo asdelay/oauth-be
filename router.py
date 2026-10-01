@@ -8,6 +8,7 @@ import jwt
 
 from config import settings
 from oauth_google import generate_google_oauth_uri
+from state import states
 
 router = APIRouter(prefix="/auth")
 
@@ -17,7 +18,11 @@ def get_google_oauth_redirect_uri():
     return RedirectResponse(url=uri, status_code=302)
 
 @router.post("/google/callback")
-async def handle_code(code: Annotated[str, Body(embed=True)]):
+async def handle_code(code: Annotated[str, Body()], state: Annotated[str, Body()]):
+    if state in states:
+        print("state is ok")
+    else:
+        raise
     google_token_url = "https://oauth2.googleapis.com/token"
     list_url = "https://www.googleapis.com/drive/v3/files"
     async with aiohttp.ClientSession() as session:
